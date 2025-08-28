@@ -205,3 +205,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# generated files
+data/synthetic_quarters.csv
+data/synthetic_analyzed_features.csv
+data/analyzed_features.csv
