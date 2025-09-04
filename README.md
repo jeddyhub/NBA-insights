@@ -13,7 +13,5 @@ pip install -r requirements.txt
 ## Data
 Place a `games.csv` file under `data/` with columns: `game_id,date,home_team,away_team,home_pts,away_pts`.
 
-## Run the experiment
-```bash
-python scripts/run_experiment.py --csv-path data/games.csv --out-report report/report.md
-```
+## Configure API Key
+Rename `OAI_CONFIG_TEMPLATE.json` to `OAI_CONFIG.json`. Enter your OpenAI API key.

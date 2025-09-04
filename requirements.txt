@@ -8,3 +8,4 @@ txgraffiti
 rich
 pyfiglet
 questionary
+openai
