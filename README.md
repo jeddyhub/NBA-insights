@@ -1,4 +1,4 @@
-# NBA Synthetic Inequalities — reproducible experiments (CSV version)
+# NBA Insights
 
 ## Requirements
 - Python 3.9+
