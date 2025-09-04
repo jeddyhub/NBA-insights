@@ -85,12 +85,17 @@ def main_menu():
             
             if database == "Original games dataset":
                 df = pd.read_csv("data/games.csv")
-                print("Original games dataset selected.")
+                console.print("Original games dataset selected.")
+                
+                bool_cols = df.select_dtypes(include=['bool']).columns.tolist()
                 
                 # remove columns with NaN values
                 df = df.dropna(axis=1)
                 
                 feats = [col for col in df.select_dtypes(include=['number']).columns if col not in ['season_id', 'game_id']]
+                
+                if 'season_id' in feats:
+                    feats.remove('season_id')
                 
                 k = questionary.text(
                     "How many features do you want to want to project onto?",
@@ -103,6 +108,11 @@ def main_menu():
                     df_analyzed = analyze_features(df[feats], n_clusters = k)
                     print(f'{k} features selected:', df_analyzed.columns.tolist())
                     
+                    # also add back boolean columns
+                    for bcol in bool_cols:
+                        if bcol in df.columns:
+                            df_analyzed[bcol] = df[bcol]
+                    
                     # save analyzed features to csv
                     df_analyzed.to_csv("data/analyzed_features.csv", index=False)
                     console.print(f"Feature analysis complete. Analyzed features saved to data/analyzed_features.csv")
@@ -113,6 +123,8 @@ def main_menu():
                 try:
                     df = pd.read_csv("data/synthetic_quarters.csv")
                     print("Synthetic quarterly stats dataset selected.")
+                    
+                    bool_cols = df.select_dtypes(include=['bool']).columns.tolist()
                     
                     # remove columns with NaN values
                     df = df.dropna(axis=1)
@@ -130,6 +142,10 @@ def main_menu():
                     if which_features == "Only first half (Q1, Q2) features":
                         numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
                         feats = [col for col in numeric_cols if 'Q3' not in col and 'Q4' not in col]
+                        if 'season_id' in feats:
+                            feats.remove('season_id')
+                        if 'game_id' in feats:
+                            feats.remove('game_id')
                     
                     k = questionary.text(
                         "How many features do you want to want to project onto?",
@@ -139,6 +155,11 @@ def main_menu():
                     if k and k > 0:
                         df_analyzed = analyze_features(df[feats], n_clusters = k)
                         print(f'{k} features selected:', df_analyzed.columns.tolist())
+                        
+                        # also add back boolean columns
+                        for bcol in bool_cols:
+                            if bcol in df.columns:
+                                df_analyzed[bcol] = df[bcol]
                         
                         # save analyzed features to csv
                         df_analyzed.to_csv("data/synthetic_analyzed_features.csv", index=False)
@@ -185,6 +206,7 @@ def main_menu():
             
             if database == "Analyzed features from synthetic quarterly stats dataset":
                 try:
+                    
                     df = pd.read_csv("data/synthetic_analyzed_features.csv")
                     print("Analyzed features from synthetic quarterly stats dataset selected.")
                 except FileNotFoundError:
@@ -198,7 +220,7 @@ def main_menu():
             boolean_cols = df.select_dtypes(include=['bool']).columns.tolist()
             
             target_type = questionary.select(
-                "What type of target variable do you want?",
+                "Which feature do you want to target?",
                 choices=[ "Randomly select one of the features as target",
                           "Specify a target feature"],
                 style=utils.custom_style,

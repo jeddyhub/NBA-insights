@@ -4,7 +4,7 @@ import pandas as pd
 
 from types import MethodDescriptorType
 from txgraffiti.playground import ConjecturePlayground
-from txgraffiti.generators import convex_hull, linear_programming
+from txgraffiti.generators import linear_programming
 from txgraffiti.heuristics import morgan_accept, dalmatian_accept
 from txgraffiti.processing import remove_duplicates, sort_by_touch_count
 
