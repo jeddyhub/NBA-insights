@@ -230,16 +230,7 @@ def page_generate_conjectures():
     st.markdown(
         """
         TxGraffiti searches for **linear relationships among columns** using optimization (linear programming)
-        and heuristics. The approach is described in the paper:  
-        **"TxGraffiti — Structured conjecturing over tabular data"**.  
-        Read more: [arXiv:2409.19379](https://arxiv.org/pdf/2409.19379)
-
-        This UI exposes the main steps so the process isn't a black box:
-        1. choose a dataset and which numeric **features** to search over,  
-        2. pick a **target** feature,  
-        3. optionally provide **hypotheses** (typically boolean columns),  
-        4. choose the generator method (LP), heuristics to filter candidates, and post-processors,
-        5. run discovery and inspect/save the resulting conjectures.
+        and heuristics.
         """
     )
 
@@ -292,29 +283,20 @@ def page_generate_conjectures():
     features_for_search = [f for f in selected_features if f != target]
 
     # ---- hypotheses (typically boolean columns) ----
-    st.markdown("**Hypotheses (optional)** — typically boolean columns like `home_win` or `away_win`.")
+    st.markdown("**Hypotheses** — typically boolean columns like `home_win` or `away_win`.")
     use_auto_hyps = st.checkbox("Auto-detect boolean columns as hypotheses", value=True)
     if use_auto_hyps:
         hypotheses = list(boolean_cols)
     else:
-        hypotheses = st.multiselect("Select hypothesis columns (they must be present in the dataset)", boolean_cols, default=boolean_cols)
+        hypotheses = st.multiselect("Select hypothesis columns", boolean_cols, default=boolean_cols)
 
     # ---- advanced options: methods, heuristics, post-processors, and runtime limits ----
-    with st.expander("Advanced options (methods, heuristics, post-processors, runtime)"):
+    with st.expander("Advanced options"):
         st.markdown("**Generator methods** (TxGraffiti generators). Pick at least one; LP is typical.")
         use_lp = st.checkbox("Use linear_programming (LP generator)", value=True)
         use_convex_hull = st.checkbox("Use convex_hull (not recommended for >4 features)", value=False)
 
-        st.markdown("**Heuristics** — functions that accept/reject candidates (filtering).")
-        use_morgan = st.checkbox("Use morgan_accept heuristic", value=True)
-        use_dalmatian = st.checkbox("Use dalmatian_accept heuristic", value=True)
-
-        st.markdown("**Post-processors** — clean up / sort the discovered conjectures.")
-        use_remove_duplicates = st.checkbox("Remove duplicates", value=True)
-        use_sort_by_touch = st.checkbox("Sort by touch count (sort_by_touch_count)", value=True)
-
         st.markdown("**Other options**")
-        object_symbol = st.text_input("object_symbol (symbol used in playground, e.g. 'game')", value="game")
         show_top_n = st.number_input("How many top conjectures to display", min_value=1, max_value=200, value=20, step=1)
         max_to_analyze = st.number_input("Maximum conjectures to write/download (full set)", min_value=1, max_value=10000, value=1000, step=1)
 
@@ -324,10 +306,9 @@ def page_generate_conjectures():
     if run:
         # lazy import of txgraffiti components and helpful error if missing
         try:
-            from txgraffiti.playground import ConjecturePlayground
+            from txgraffiti.systems import christine
             from txgraffiti.generators import linear_programming, convex_hull
-            from txgraffiti.heuristics import morgan_accept, dalmatian_accept
-            from txgraffiti.processing import remove_duplicates, sort_by_touch_count
+            
         except Exception as e:
             st.error(
                 "Failed to import txgraffiti. Ensure txgraffiti is installed in your environment.\n\n"
@@ -342,39 +323,49 @@ def page_generate_conjectures():
         if use_convex_hull:
             methods.append(convex_hull)
 
-        heuristics = []
-        if use_morgan:
-            heuristics.append(morgan_accept)
-        if use_dalmatian:
-            heuristics.append(dalmatian_accept)
+        # heuristics = []
+        # if use_morgan:
+        #     heuristics.append(morgan_accept)
+        # if use_dalmatian:
+        #     heuristics.append(dalmatian_accept)
 
-        post_processors = []
-        if use_remove_duplicates:
-            post_processors.append(remove_duplicates)
-        if use_sort_by_touch:
-            post_processors.append(sort_by_touch_count)
+        # post_processors = []
+        # if use_remove_duplicates:
+        #     post_processors.append(remove_duplicates)
+        # if use_sort_by_touch:
+        #     post_processors.append(sort_by_touch_count)
 
         if not methods:
             st.error("Please select at least one generator method (e.g. linear_programming).")
             return
 
         # Inform user about chosen config
-        st.info(
-            f"Running TxGraffiti with {len(methods)} method(s), "
-            f"{len(heuristics)} heuristic(s), and {len(post_processors)} post-processor(s)."
-        )
+        # st.info(
+        #     f"Running TxGraffiti conjecture discovery..."
+        # )
 
         # Run discovery inside spinner and handle runtime errors
         try:
-            pg = ConjecturePlayground(df, object_symbol=object_symbol)
-            conjs = pg.discover(
-                methods=methods,
-                features=features_for_search,
-                target=target,
-                hypothesis=hypotheses,
-                heuristics=heuristics,
-                post_processors=post_processors,
-            )
+            with st.spinner("Running TxGraffiti discovery..."):
+                conjs = christine(
+                    df[features_for_search + [target] + hypotheses],
+                    target_column=target,
+                    generators=methods,
+                )
+            
+            # conjs = christine(
+    # df_synth_analyzed,
+    # target_column = 'Q1_home_fta',
+    # generators = (linear_programming, convex_hull),)
+
+            # conjs = pg.discover(
+            #     methods=methods,
+            #     features=features_for_search,
+            #     target=target,
+            #     hypothesis=hypotheses,
+            #     heuristics=heuristics,
+            #     post_processors=post_processors,
+            # )
         except Exception as e:
             st.exception(e)
             st.error("TxGraffiti discovery failed. Check the dataset shape and your advanced options.")
